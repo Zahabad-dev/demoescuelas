@@ -5,15 +5,16 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   GraduationCap, LayoutDashboard, Users,
-  CreditCard, Settings, LogOut, Menu, X, ChevronRight,
+  CreditCard, Settings, LogOut, Menu, X, ChevronRight, MessageSquare,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const navItems = [
-  { href: '/admin',              icon: LayoutDashboard, label: 'Dashboard'      },
-  { href: '/admin/alumnos',      icon: Users,           label: 'Alumnos'        },
-  { href: '/admin/pagos',        icon: CreditCard,      label: 'Pagos'          },
-  { href: '/admin/configuracion',icon: Settings,        label: 'Configuración'  },
+  { href: '/admin',               icon: LayoutDashboard, label: 'Dashboard'      },
+  { href: '/admin/alumnos',       icon: Users,           label: 'Alumnos'        },
+  { href: '/admin/pagos',         icon: CreditCard,      label: 'Pagos'          },
+  { href: '/admin/tickets',       icon: MessageSquare,   label: 'Tickets Bot'    },
+  { href: '/admin/configuracion', icon: Settings,        label: 'Configuración'  },
 ]
 
 export default function AdminSidebar({ user }: { user: { nombre: string; rol: string } }) {

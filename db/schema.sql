@@ -145,3 +145,47 @@ INSERT INTO public.pagos (padre_id, alumno_id, periodo, monto, fecha_limite, fec
   ('b1000000-0000-0000-0000-000000000005','a1000000-0000-0000-0000-000000000005','2026-05', 4200, '2026-05-10',  NULL,        'atrasado',  NULL),
   ('b1000000-0000-0000-0000-000000000006','a1000000-0000-0000-0000-000000000006','2026-05', 5800, '2026-05-10', '2026-05-09', 'pagado',   'tarjeta')
 ON CONFLICT DO NOTHING;
+
+-- ── Tickets (WhatsApp bot) ────────────────────────────────────
+-- Un registro por número de WhatsApp (upsert en cada conversación)
+CREATE TABLE IF NOT EXISTS public.tickets (
+  id              UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  numero_whatsapp TEXT NOT NULL,
+  nombre_padre    TEXT,
+  nombre_alumno   TEXT,
+  correo          TEXT,
+  nivel_escolar   TEXT,
+  descripcion     TEXT,
+  estado          TEXT NOT NULL DEFAULT 'Nuevo',
+  tipo            TEXT,
+  prioridad       TEXT NOT NULL DEFAULT 'MEDIA',
+  numero_negocio  TEXT,
+  notas           TEXT,
+  fecha_hora      TIMESTAMPTZ DEFAULT NOW(),
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT tickets_whatsapp_uq UNIQUE (numero_whatsapp)
+);
+
+ALTER TABLE public.tickets ENABLE ROW LEVEL SECURITY;
+
+-- Admin autenticado puede leer/escribir todo
+CREATE POLICY "auth_all_tickets" ON public.tickets
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Bot (via endpoint /api/tickets) puede hacer upsert con service_role
+CREATE POLICY "anon_insert_tickets" ON public.tickets
+  FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "anon_update_tickets" ON public.tickets
+  FOR UPDATE TO anon USING (true) WITH CHECK (true);
+
+-- Trigger updated_at
+DROP TRIGGER IF EXISTS trg_tickets_updated_at ON public.tickets;
+CREATE TRIGGER trg_tickets_updated_at
+  BEFORE UPDATE ON public.tickets
+  FOR EACH ROW EXECUTE FUNCTION public.fn_updated_at();
+
+CREATE INDEX IF NOT EXISTS idx_tickets_whatsapp ON public.tickets(numero_whatsapp);
+CREATE INDEX IF NOT EXISTS idx_tickets_estado   ON public.tickets(estado);
+CREATE INDEX IF NOT EXISTS idx_tickets_updated  ON public.tickets(updated_at DESC);
