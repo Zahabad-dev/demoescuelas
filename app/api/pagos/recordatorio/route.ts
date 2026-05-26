@@ -29,7 +29,15 @@ export async function GET(request: NextRequest) {
   const estados = estadoParam.split(',').map((s) => s.trim()).filter(Boolean)
 
   // ── Consultar Supabase ──────────────────────────────────────
-  const admin = createAdminClient()
+  let admin
+  try {
+    admin = createAdminClient()
+  } catch {
+    return NextResponse.json(
+      { error: 'Servidor no configurado: falta SUPABASE_SERVICE_ROLE_KEY en variables de entorno de Vercel' },
+      { status: 503 }
+    )
+  }
 
   const { data, error } = await admin
     .from('v_pagos_detalle')

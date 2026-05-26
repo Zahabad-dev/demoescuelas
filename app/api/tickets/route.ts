@@ -45,7 +45,15 @@ export async function POST(request: NextRequest) {
   const wa = String(body.numero_whatsapp).replace(/^\+/, '').trim()
 
   // ── Upsert en Supabase ──────────────────────────────────────
-  const admin = createAdminClient()
+  let admin
+  try {
+    admin = createAdminClient()
+  } catch {
+    return NextResponse.json(
+      { error: 'Servidor no configurado: falta SUPABASE_SERVICE_ROLE_KEY en Vercel' },
+      { status: 503 }
+    )
+  }
 
   const { data, error } = await admin
     .from('tickets')
