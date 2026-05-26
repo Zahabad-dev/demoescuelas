@@ -18,18 +18,31 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
-    const supabase = createClient()
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    })
+    // Verificar que Supabase esté configurado
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
+      setError('Supabase no está configurado. Agrega NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en Vercel → Settings → Environment Variables.')
+      setLoading(false)
+      return
+    }
 
-    if (authError) {
-      setError(
-        authError.message === 'Invalid login credentials'
-          ? 'Correo o contraseña incorrectos'
-          : authError.message
-      )
+    try {
+      const supabase = createClient()
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      })
+
+      if (authError) {
+        setError(
+          authError.message === 'Invalid login credentials'
+            ? 'Correo o contraseña incorrectos'
+            : authError.message
+        )
+        setLoading(false)
+        return
+      }
+    } catch {
+      setError('Error de conexión con Supabase. Verifica las variables de entorno.')
       setLoading(false)
       return
     }
