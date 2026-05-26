@@ -164,6 +164,7 @@ CREATE TABLE IF NOT EXISTS public.tickets (
   fecha_hora      TIMESTAMPTZ DEFAULT NOW(),
   created_at      TIMESTAMPTZ DEFAULT NOW(),
   updated_at      TIMESTAMPTZ DEFAULT NOW(),
+  seguimiento_enviado BOOLEAN NOT NULL DEFAULT FALSE,
   CONSTRAINT tickets_whatsapp_uq UNIQUE (numero_whatsapp)
 );
 
