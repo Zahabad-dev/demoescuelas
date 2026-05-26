@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { GraduationCap, Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -17,27 +18,24 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
+    const supabase = createClient()
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    })
 
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error ?? 'Error al iniciar sesión')
-        return
-      }
-
-      router.push('/admin')
-      router.refresh()
-    } catch {
-      setError('Error de conexión. Inténtalo de nuevo.')
-    } finally {
+    if (authError) {
+      setError(
+        authError.message === 'Invalid login credentials'
+          ? 'Correo o contraseña incorrectos'
+          : authError.message
+      )
       setLoading(false)
+      return
     }
+
+    router.push('/admin')
+    router.refresh()
   }
 
   return (

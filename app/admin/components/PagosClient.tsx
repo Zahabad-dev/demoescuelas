@@ -8,9 +8,11 @@ type Pago = {
   alumno_nombre: string
   nivel: string
   grado: string
+  grupo: string | null
   padre_nombre: string
-  telefono: string
-  email: string
+  telefono: string | null
+  whatsapp: string | null
+  padre_email: string
   concepto: string
   periodo: string
   monto: number
@@ -18,6 +20,7 @@ type Pago = {
   fecha_pago: string | null
   estado: 'pagado' | 'pendiente' | 'atrasado'
   metodo_pago: string | null
+  notas: string | null
 }
 
 const estadoBadge = {
@@ -182,13 +185,13 @@ export default function PagosClient({ pagos: initialPagos }: { pagos: Pago[] }) 
                     <td className="px-5 py-4">
                       <div className="text-gray-700">{pago.padre_nombre}</div>
                       <a
-                        href={`https://wa.me/${pago.telefono?.replace(/\D/g, '')}`}
+                        href={`https://wa.me/${(pago.whatsapp ?? pago.telefono ?? '').replace(/\D/g, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 mt-0.5"
                       >
                         <Phone className="w-3 h-3" />
-                        {pago.telefono}
+                        {pago.telefono ?? pago.whatsapp ?? '—'}
                       </a>
                     </td>
 

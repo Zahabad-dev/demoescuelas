@@ -1,35 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { pool } from '@/lib/db'
-import { verifyToken } from '@/lib/auth'
+import { createClient } from '@/lib/supabase/server'
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const token = request.cookies.get('auth_token')?.value
-  if (!token) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const supabase = await createClient()
 
-  try {
-    await verifyToken(token)
-    const { id } = await params
-    const body = await request.json()
-    const { estado, fecha_pago, metodo_pago, notas } = body
+  // Verifica sesión activa
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
-    const { rows } = await pool.query(
-      `UPDATE pagos
-       SET estado = COALESCE($1, estado),
-           fecha_pago = COALESCE($2, fecha_pago),
-           metodo_pago = COALESCE($3, metodo_pago),
-           notas = COALESCE($4, notas),
-           updated_at = NOW()
-       WHERE id = $5
-       RETURNING *`,
-      [estado, fecha_pago, metodo_pago, notas, id]
-    )
+  const { id } = await params
+  const body = await request.json()
 
-    if (rows.length === 0) {
-      return NextResponse.json({ error: 'Pago no encontrado' }, { status: 404 })
-    }
+  const updateFields: Record<string, unknown> = {}
+  if (body.estado)      updateFields.estado      = body.estado
+  if (body.fecha_pago)  updateFields.fecha_pago  = body.fecha_pago
+  if (body.metodo_pago) updateFields.metodo_pago = body.metodo_pago
+  if (body.notas)       updateFields.notas       = body.notas
 
-    return NextResponse.json({ ok: true, pago: rows[0] })
-  } catch {
-    return NextResponse.json({ error: 'Error al actualizar' }, { status: 500 })
-  }
+  const { data, error } = await supabase
+    .from('pagos')
+    .update(updateFields)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ ok: true, pago: data })
 }

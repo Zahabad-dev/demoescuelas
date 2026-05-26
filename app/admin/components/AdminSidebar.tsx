@@ -4,36 +4,31 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  GraduationCap,
-  LayoutDashboard,
-  Users,
-  CreditCard,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  ChevronRight,
+  GraduationCap, LayoutDashboard, Users,
+  CreditCard, Settings, LogOut, Menu, X, ChevronRight,
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 const navItems = [
-  { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/admin/alumnos', icon: Users, label: 'Alumnos' },
-  { href: '/admin/pagos', icon: CreditCard, label: 'Pagos' },
-  { href: '/admin/configuracion', icon: Settings, label: 'Configuración' },
+  { href: '/admin',              icon: LayoutDashboard, label: 'Dashboard'      },
+  { href: '/admin/alumnos',      icon: Users,           label: 'Alumnos'        },
+  { href: '/admin/pagos',        icon: CreditCard,      label: 'Pagos'          },
+  { href: '/admin/configuracion',icon: Settings,        label: 'Configuración'  },
 ]
 
 export default function AdminSidebar({ user }: { user: { nombre: string; rol: string } }) {
   const pathname = usePathname()
-  const router = useRouter()
+  const router   = useRouter()
   const [open, setOpen] = useState(false)
 
   async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' })
+    const supabase = createClient()
+    await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
   }
 
-  const SidebarContent = () => (
+  const Nav = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="px-5 py-6 border-b border-white/10">
@@ -57,13 +52,13 @@ export default function AdminSidebar({ user }: { user: { nombre: string; rol: st
               key={href}
               href={href}
               onClick={() => setOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors group ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                 active
                   ? 'bg-blue-600 text-white'
                   : 'text-blue-200 hover:bg-white/10 hover:text-white'
               }`}
             >
-              <Icon className="w-4.5 h-4.5 shrink-0" />
+              <Icon className="w-4 h-4 shrink-0" />
               {label}
               {active && <ChevronRight className="w-4 h-4 ml-auto" />}
             </Link>
@@ -105,30 +100,20 @@ export default function AdminSidebar({ user }: { user: { nombre: string; rol: st
 
       {/* Mobile overlay */}
       {open && (
-        <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-          onClick={() => setOpen(false)}
-        />
+        <div className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
       )}
 
       {/* Mobile drawer */}
-      <aside
-        className={`lg:hidden fixed top-0 left-0 bottom-0 z-50 w-64 bg-blue-950 transition-transform duration-300 ${
-          open ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <button
-          onClick={() => setOpen(false)}
-          className="absolute top-4 right-4 text-blue-300 hover:text-white"
-        >
+      <aside className={`lg:hidden fixed top-0 left-0 bottom-0 z-50 w-64 bg-blue-950 transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+        <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-blue-300 hover:text-white">
           <X className="w-5 h-5" />
         </button>
-        <SidebarContent />
+        <Nav />
       </aside>
 
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col fixed top-0 left-0 bottom-0 w-64 bg-blue-950">
-        <SidebarContent />
+        <Nav />
       </aside>
     </>
   )
