@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import PagosClient from './components/PagosClient'
 import { Users, CheckCircle, AlertTriangle, Clock, DollarSign } from 'lucide-react'
 
@@ -40,7 +40,7 @@ async function getData(): Promise<{ pagos: Pago[]; isDemo: boolean }> {
   }
 
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const periodoActual = new Date().toISOString().slice(0, 7)
 
     const { data, error } = await supabase

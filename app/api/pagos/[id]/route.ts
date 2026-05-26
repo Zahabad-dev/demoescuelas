@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
-
-  // Verifica sesión activa
-  const { data: { user } } = await supabase.auth.getUser()
+  // Verifica que hay una sesión válida (anon client lee la cookie)
+  const sessionClient = await createClient()
+  const { data: { user } } = await sessionClient.auth.getUser()
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   const { id } = await params
@@ -18,9 +18,11 @@ export async function PATCH(
   if (body.estado)      updateFields.estado      = body.estado
   if (body.fecha_pago)  updateFields.fecha_pago  = body.fecha_pago
   if (body.metodo_pago) updateFields.metodo_pago = body.metodo_pago
-  if (body.notas)       updateFields.notas       = body.notas
+  if (body.notas !== undefined) updateFields.notas = body.notas
 
-  const { data, error } = await supabase
+  // Operación de escritura con service_role (bypasea RLS de forma segura server-side)
+  const admin = createAdminClient()
+  const { data, error } = await admin
     .from('pagos')
     .update(updateFields)
     .eq('id', id)

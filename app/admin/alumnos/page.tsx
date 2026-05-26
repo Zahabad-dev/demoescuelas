@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Users, GraduationCap } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -23,7 +23,7 @@ async function getAlumnos() {
     return { alumnos: mockAlumnos, isDemo: true }
   }
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { data, error } = await supabase
       .from('alumnos')
       .select('id, nombre, apellidos, nivel, grado, grupo, activo')

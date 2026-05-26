@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import PagosFullClient from '../components/PagosFullClient'
 
 export const dynamic = 'force-dynamic'
@@ -41,7 +41,7 @@ async function getData(): Promise<{ pagos: Pago[]; isDemo: boolean }> {
     return { pagos: mockPagos, isDemo: true }
   }
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { data, error } = await supabase
       .from('v_pagos_detalle')
       .select('*')
