@@ -1,5 +1,6 @@
 import { query } from '@/lib/db'
 import { CreditCard, CheckCircle, AlertTriangle, Clock } from 'lucide-react'
+import DownloadButton from '../components/DownloadButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,12 +68,18 @@ export default async function PagosPage() {
 
   return (
     <div>
-      <div className="mb-6 pl-12 lg:pl-0">
-        <h1 className="text-2xl font-black text-gray-900">Pagos</h1>
-        <p className="text-gray-500 text-sm mt-0.5">
-          {pagos.length} registros de colegiatura
-          {isDemo && <span className="ml-2 inline-flex items-center px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">Sin conexión a BD</span>}
-        </p>
+      <div className="mb-6 pl-12 lg:pl-0 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-black text-gray-900">Pagos</h1>
+          <p className="text-gray-500 text-sm mt-0.5">
+            {pagos.length} registros de colegiatura
+            {isDemo && <span className="ml-2 inline-flex items-center px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">Sin conexión a BD</span>}
+          </p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <DownloadButton href="/api/reportes/adeudos" label="Reporte Adeudos" />
+          <DownloadButton href="/api/reportes/alumnos" label="Lista Completa" />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

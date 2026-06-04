@@ -1,5 +1,6 @@
 import { query } from '@/lib/db'
 import { MessageSquare } from 'lucide-react'
+import DownloadButton from '../components/DownloadButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,12 +58,15 @@ export default async function SolicitudesPage() {
 
   return (
     <div>
-      <div className="mb-6 pl-12 lg:pl-0">
-        <h1 className="text-2xl font-black text-gray-900">Solicitudes del Bot</h1>
-        <p className="text-gray-500 text-sm mt-0.5">
-          Conversaciones registradas desde WhatsApp y otros canales
-          {isDemo && <span className="ml-2 inline-flex items-center px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">Sin conexión a BD</span>}
-        </p>
+      <div className="mb-6 pl-12 lg:pl-0 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-black text-gray-900">Solicitudes del Bot</h1>
+          <p className="text-gray-500 text-sm mt-0.5">
+            Conversaciones registradas desde WhatsApp y otros canales
+            {isDemo && <span className="ml-2 inline-flex items-center px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">Sin conexión a BD</span>}
+          </p>
+        </div>
+        <DownloadButton href="/api/reportes/solicitudes" label="Descargar Excel" />
       </div>
 
       {/* Stats */}
