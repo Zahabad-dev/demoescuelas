@@ -1,75 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { query, queryOne } from '@/lib/db'
 
 /**
- * GET  /api/tickets
- * Devuelve tickets activos para el cron de seguimiento.
- * Protegido con header  x-api-secret: <N8N_WEBHOOK_SECRET>
- *
- * Query params opcionales:
- *   ?modo=seguimiento   → filtra seguimiento_enviado=false y excluye Cerrado/Escalado/Resuelto
- *
- * POST  /api/tickets
- * Crea / actualiza ticket por numero_whatsapp (upsert).
- * Acepta también: seguimiento_enviado (boolean)
+ * GET  /api/tickets  — Solicitudes activas para n8n
+ * POST /api/tickets  — Crea/actualiza solicitud por numero_whatsapp
+ * Protegido con header x-api-secret
  */
 
 const API_SECRET = process.env.N8N_WEBHOOK_SECRET ?? ''
 
-function getAdmin() {
-  return createAdminClient()
-}
-
-// ── GET ─────────────────────────────────────────────────────────
-export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('x-api-secret')
-  if (API_SECRET && authHeader !== API_SECRET) {
+function checkAuth(request: NextRequest) {
+  if (API_SECRET && request.headers.get('x-api-secret') !== API_SECRET) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
+  return null
+}
 
-  let admin
-  try { admin = getAdmin() } catch {
-    return NextResponse.json(
-      { error: 'Servidor no configurado: falta SUPABASE_SERVICE_ROLE_KEY en Vercel' },
-      { status: 503 }
-    )
+// ── GET ──────────────────────────────────────────────────────────
+export async function GET(request: NextRequest) {
+  const authError = checkAuth(request)
+  if (authError) return authError
+
+  try {
+    const { searchParams } = new URL(request.url)
+    const modo = searchParams.get('modo')
+
+    let sql = `SELECT * FROM solicitudes_liceo WHERE numero_whatsapp IS NOT NULL`
+    if (modo === 'seguimiento') {
+      sql += ` AND seguimiento_enviado = 'No' AND estado NOT IN ('Cerrado','Escalado','Resuelto')`
+    }
+    sql += ` ORDER BY fecha_hora ASC`
+
+    const tickets = await query(sql)
+    return NextResponse.json({ ok: true, total: tickets.length, tickets })
+  } catch (err) {
+    console.error('[GET /api/tickets]', err)
+    return NextResponse.json({ error: 'Error de base de datos' }, { status: 500 })
   }
-
-  const { searchParams } = new URL(request.url)
-  const modo = searchParams.get('modo')
-
-  let query = admin.from('tickets').select('*').not('numero_whatsapp', 'is', null)
-
-  if (modo === 'seguimiento') {
-    // Solo tickets activos que aún no recibieron seguimiento
-    query = query
-      .eq('seguimiento_enviado', false)
-      .not('estado', 'in', '("Cerrado","Escalado","Resuelto")')
-  }
-
-  const { data, error } = await query.order('updated_at', { ascending: true })
-
-  if (error) {
-    console.error('[GET /api/tickets] Supabase error:', error.message)
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ ok: true, total: (data ?? []).length, tickets: data ?? [] })
 }
 
 // ── POST ─────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get('x-api-secret')
-  if (API_SECRET && authHeader !== API_SECRET) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-  }
+  const authError = checkAuth(request)
+  if (authError) return authError
 
   let body: Record<string, unknown>
-  try {
-    body = await request.json()
-  } catch {
-    return NextResponse.json({ error: 'JSON inválido' }, { status: 400 })
-  }
+  try { body = await request.json() }
+  catch { return NextResponse.json({ error: 'JSON inválido' }, { status: 400 }) }
 
   if (!body.numero_whatsapp) {
     return NextResponse.json({ error: 'numero_whatsapp es requerido' }, { status: 400 })
@@ -77,41 +54,37 @@ export async function POST(request: NextRequest) {
 
   const wa = String(body.numero_whatsapp).replace(/^\+/, '').trim()
 
-  let admin
-  try { admin = getAdmin() } catch {
-    return NextResponse.json(
-      { error: 'Servidor no configurado: falta SUPABASE_SERVICE_ROLE_KEY en Vercel' },
-      { status: 503 }
-    )
+  try {
+    await query(`
+      INSERT INTO solicitudes_liceo
+        (numero_whatsapp, fecha_hora, nombre_contacto, descripcion, estado, tipo_servicio, prioridad, orientador, origen, numero_negocio, seguimiento_enviado)
+      VALUES ($1, NOW(), $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      ON CONFLICT (numero_whatsapp) DO UPDATE SET
+        fecha_hora          = NOW(),
+        nombre_contacto     = COALESCE(EXCLUDED.nombre_contacto, solicitudes_liceo.nombre_contacto),
+        descripcion         = COALESCE(EXCLUDED.descripcion,     solicitudes_liceo.descripcion),
+        estado              = COALESCE(EXCLUDED.estado,          solicitudes_liceo.estado),
+        tipo_servicio       = COALESCE(EXCLUDED.tipo_servicio,   solicitudes_liceo.tipo_servicio),
+        prioridad           = COALESCE(EXCLUDED.prioridad,       solicitudes_liceo.prioridad),
+        orientador          = COALESCE(EXCLUDED.orientador,      solicitudes_liceo.orientador),
+        seguimiento_enviado = COALESCE(EXCLUDED.seguimiento_enviado, solicitudes_liceo.seguimiento_enviado)
+    `, [
+      wa,
+      body.nombre_contacto  ?? body.nombre_padre ?? null,
+      body.descripcion      ?? null,
+      body.estado           ?? 'Nuevo',
+      body.tipo_servicio    ?? body.tipo ?? null,
+      body.prioridad        ?? 'MEDIA',
+      body.orientador       ?? null,
+      body.origen           ?? 'WhatsApp',
+      body.numero_negocio   ?? null,
+      body.seguimiento_enviado ?? 'No',
+    ])
+
+    const ticket = await queryOne(`SELECT * FROM solicitudes_liceo WHERE numero_whatsapp = $1`, [wa])
+    return NextResponse.json({ ok: true, ticket })
+  } catch (err) {
+    console.error('[POST /api/tickets]', err)
+    return NextResponse.json({ error: 'Error de base de datos' }, { status: 500 })
   }
-
-  // Construir payload solo con campos que vienen en el body
-  const payload: Record<string, unknown> = {
-    numero_whatsapp: wa,
-    updated_at: new Date().toISOString(),
-  }
-  if (body.nombre_padre    !== undefined) payload.nombre_padre    = body.nombre_padre
-  if (body.nombre_alumno   !== undefined) payload.nombre_alumno   = body.nombre_alumno
-  if (body.correo          !== undefined) payload.correo          = body.correo
-  if (body.nivel_escolar   !== undefined) payload.nivel_escolar   = body.nivel_escolar
-  if (body.descripcion     !== undefined) payload.descripcion     = body.descripcion
-  if (body.estado          !== undefined) payload.estado          = body.estado
-  if (body.tipo            !== undefined) payload.tipo            = body.tipo
-  if (body.prioridad       !== undefined) payload.prioridad       = body.prioridad
-  if (body.numero_negocio  !== undefined) payload.numero_negocio  = body.numero_negocio
-  if (body.notas           !== undefined) payload.notas           = body.notas
-  if (body.seguimiento_enviado !== undefined) payload.seguimiento_enviado = body.seguimiento_enviado
-
-  const { data, error } = await admin
-    .from('tickets')
-    .upsert(payload, { onConflict: 'numero_whatsapp' })
-    .select()
-    .single()
-
-  if (error) {
-    console.error('[POST /api/tickets] Supabase error:', error.message)
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ ok: true, ticket: data })
 }

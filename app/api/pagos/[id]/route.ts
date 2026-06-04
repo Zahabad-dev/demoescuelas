@@ -1,35 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
+import { getSessionUser } from '@/lib/auth'
+import { queryOne } from '@/lib/db'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Verifica que hay una sesión válida (anon client lee la cookie)
-  const sessionClient = await createClient()
-  const { data: { user } } = await sessionClient.auth.getUser()
+  const user = await getSessionUser()
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   const { id } = await params
   const body = await request.json()
 
-  const updateFields: Record<string, unknown> = {}
-  if (body.estado)      updateFields.estado      = body.estado
-  if (body.fecha_pago)  updateFields.fecha_pago  = body.fecha_pago
-  if (body.metodo_pago) updateFields.metodo_pago = body.metodo_pago
-  if (body.notas !== undefined) updateFields.notas = body.notas
+  const sets: string[] = []
+  const vals: unknown[] = []
+  let i = 1
 
-  // Operación de escritura con service_role (bypasea RLS de forma segura server-side)
-  const admin = createAdminClient()
-  const { data, error } = await admin
-    .from('pagos')
-    .update(updateFields)
-    .eq('id', id)
-    .select()
-    .single()
+  if (body.estado     !== undefined) { sets.push(`estado = $${i++}`);     vals.push(body.estado) }
+  if (body.fecha_pago !== undefined) { sets.push(`fecha_pago = $${i++}`); vals.push(body.fecha_pago) }
+  if (body.metodo_pago!== undefined) { sets.push(`metodo_pago = $${i++}`);vals.push(body.metodo_pago) }
+  if (body.notas      !== undefined) { sets.push(`notas = $${i++}`);      vals.push(body.notas) }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (sets.length === 0) {
+    return NextResponse.json({ error: 'Sin campos para actualizar' }, { status: 400 })
+  }
 
-  return NextResponse.json({ ok: true, pago: data })
+  vals.push(id)
+  const pago = await queryOne(
+    `UPDATE pagos_liceo SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${i} RETURNING *`,
+    vals
+  )
+
+  if (!pago) return NextResponse.json({ error: 'Pago no encontrado' }, { status: 404 })
+  return NextResponse.json({ ok: true, pago })
 }
