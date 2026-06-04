@@ -4,17 +4,19 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  GraduationCap, LayoutDashboard, Users,
-  CreditCard, Settings, LogOut, Menu, X, ChevronRight, MessageSquare,
+  Stethoscope, LayoutDashboard, Users, UserSearch,
+  CreditCard, Settings, LogOut, Menu, X, ChevronRight,
+  MessageSquare, Building2,
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 
 const navItems = [
-  { href: '/admin',               icon: LayoutDashboard, label: 'Dashboard'      },
-  { href: '/admin/alumnos',       icon: Users,           label: 'Alumnos'        },
-  { href: '/admin/pagos',         icon: CreditCard,      label: 'Pagos'          },
-  { href: '/admin/tickets',       icon: MessageSquare,   label: 'Tickets Bot'    },
-  { href: '/admin/configuracion', icon: Settings,        label: 'Configuración'  },
+  { href: '/admin',               icon: LayoutDashboard, label: 'Dashboard'        },
+  { href: '/admin/alumnos',       icon: Users,           label: 'Alumnos'          },
+  { href: '/admin/prospectos',    icon: UserSearch,      label: 'Prospectos'       },
+  { href: '/admin/solicitudes',   icon: MessageSquare,   label: 'Solicitudes Bot'  },
+  { href: '/admin/pagos',         icon: CreditCard,      label: 'Pagos'            },
+  { href: '/admin/coordinaciones',icon: Building2,       label: 'Coordinaciones'   },
+  { href: '/admin/configuracion', icon: Settings,        label: 'Configuración'    },
 ]
 
 export default function AdminSidebar({ user }: { user: { nombre: string; rol: string } }) {
@@ -23,29 +25,26 @@ export default function AdminSidebar({ user }: { user: { nombre: string; rol: st
   const [open, setOpen] = useState(false)
 
   async function handleLogout() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
     router.refresh()
   }
 
   const Nav = () => (
     <div className="flex flex-col h-full">
-      {/* Logo */}
       <div className="px-5 py-6 border-b border-white/10">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
-            <GraduationCap className="w-5 h-5 text-white" />
+            <Stethoscope className="w-5 h-5 text-white" />
           </div>
           <div>
-            <div className="text-white font-bold text-sm leading-none">Instituto San Ángel</div>
+            <div className="text-white font-bold text-sm leading-none">Liceo Ciencias Salud</div>
             <div className="text-blue-400 text-xs mt-0.5">Panel Admin</div>
           </div>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map(({ href, icon: Icon, label }) => {
           const active = pathname === href
           return (
@@ -67,7 +66,6 @@ export default function AdminSidebar({ user }: { user: { nombre: string; rol: st
         })}
       </nav>
 
-      {/* User + logout */}
       <div className="px-3 py-4 border-t border-white/10">
         <div className="flex items-center gap-3 px-3 py-2 mb-2">
           <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
@@ -91,7 +89,6 @@ export default function AdminSidebar({ user }: { user: { nombre: string; rol: st
 
   return (
     <>
-      {/* Mobile toggle */}
       <button
         onClick={() => setOpen(true)}
         className="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 bg-blue-900 rounded-xl flex items-center justify-center text-white shadow-lg"
@@ -99,12 +96,10 @@ export default function AdminSidebar({ user }: { user: { nombre: string; rol: st
         <Menu className="w-5 h-5" />
       </button>
 
-      {/* Mobile overlay */}
       {open && (
         <div className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
       )}
 
-      {/* Mobile drawer */}
       <aside className={`lg:hidden fixed top-0 left-0 bottom-0 z-50 w-64 bg-blue-950 transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-blue-300 hover:text-white">
           <X className="w-5 h-5" />
@@ -112,7 +107,6 @@ export default function AdminSidebar({ user }: { user: { nombre: string; rol: st
         <Nav />
       </aside>
 
-      {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col fixed top-0 left-0 bottom-0 w-64 bg-blue-950">
         <Nav />
       </aside>

@@ -1,36 +1,43 @@
-import { Settings, Database, Key, Bot } from 'lucide-react'
+import { Settings, Database, Key, Bot, Workflow } from 'lucide-react'
 
 export default function ConfiguracionPage() {
+  const dbUrl = process.env.DATABASE_URL ?? ''
+  const dbHost = dbUrl ? dbUrl.replace(/postgresql:\/\/[^@]+@/, '').split('/')[0] : 'No configurado'
+
   const items = [
     {
       icon: Database,
-      title: 'Base de datos',
-      desc: 'Conectada a Supabase. Tablas: alumnos, padres, pagos.',
-      status: 'ok',
-      detail: process.env.NEXT_PUBLIC_SUPABASE_URL
-        ? '✓ NEXT_PUBLIC_SUPABASE_URL configurada'
-        : '⚠ NEXT_PUBLIC_SUPABASE_URL no configurada (modo demo)',
+      title: 'Base de datos PostgreSQL',
+      desc: 'Conexión directa a PostgreSQL en Easypanel. Tablas: alumnos_liceo, prospectos_liceo, solicitudes_liceo, coordinaciones_liceo, faq_liceo.',
+      detail: process.env.DATABASE_URL
+        ? `✓ Conectado — Host: ${dbHost}`
+        : '⚠ DATABASE_URL no configurada en variables de entorno',
     },
     {
       icon: Key,
-      title: 'Autenticación',
-      desc: 'Supabase Auth — email/password. Usuarios en Authentication → Users.',
-      status: 'ok',
-      detail: 'Sesión manejada por @supabase/ssr con cookies httpOnly',
+      title: 'Autenticación JWT',
+      desc: 'Auth propia con JWT firmado. Usuarios en tabla admin_usuarios (PostgreSQL). Sesión en cookie httpOnly 8h.',
+      detail: process.env.JWT_SECRET
+        ? '✓ JWT_SECRET configurado correctamente'
+        : '⚠ JWT_SECRET no configurado — agrega la variable de entorno',
     },
     {
       icon: Bot,
-      title: 'Endpoint de chatbot',
-      desc: 'API pública con información completa del instituto.',
-      status: 'ok',
-      detail: '/api/bot/escuela — acceso libre, sin auth',
+      title: 'Endpoint del bot (n8n)',
+      desc: 'API pública con información del Liceo. Consultada por el bot de WhatsApp en cada conversación.',
+      detail: '/api/bot/escuela — GET público, sin autenticación requerida',
+    },
+    {
+      icon: Workflow,
+      title: 'Integración n8n',
+      desc: 'Credencial Postgres en n8n apunta a la misma BD. Webhook path: liceo-wa. Los tickets se registran en solicitudes_liceo.',
+      detail: `DB: blacksheep | Credential ID: g0aAN8LJUmI85MMw`,
     },
     {
       icon: Settings,
-      title: 'n8n',
-      desc: 'Acceso directo a Supabase para automatizaciones de cobro.',
-      status: 'info',
-      detail: 'Usar nodo Supabase (URL + Service Role Key) o nodo Postgres con la cadena de conexión directa del proyecto.',
+      title: 'Variables de entorno necesarias',
+      desc: 'Configura estas variables en Vercel → Settings → Environment Variables.',
+      detail: 'DATABASE_URL · JWT_SECRET · N8N_WEBHOOK_SECRET',
     },
   ]
 
@@ -38,7 +45,7 @@ export default function ConfiguracionPage() {
     <div>
       <div className="mb-8 pl-12 lg:pl-0">
         <h1 className="text-2xl font-black text-gray-900">Configuración</h1>
-        <p className="text-gray-500 text-sm mt-0.5">Estado del sistema y conexiones</p>
+        <p className="text-gray-500 text-sm mt-0.5">Estado del sistema — Liceo de Ciencias de la Salud</p>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-5">
@@ -51,7 +58,7 @@ export default function ConfiguracionPage() {
               <h3 className="font-bold text-gray-900">{title}</h3>
             </div>
             <p className="text-sm text-gray-500 mb-3">{desc}</p>
-            <div className="bg-gray-50 rounded-xl px-4 py-2.5 text-xs text-gray-600 font-mono">{detail}</div>
+            <div className="bg-gray-50 rounded-xl px-4 py-2.5 text-xs text-gray-600 font-mono break-all">{detail}</div>
           </div>
         ))}
       </div>

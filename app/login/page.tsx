@@ -2,58 +2,46 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { GraduationCap, Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { Stethoscope, Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
+  const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    // Verificar que Supabase esté configurado
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
-      setError('Supabase no está configurado. Agrega NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en Vercel → Settings → Environment Variables.')
-      setLoading(false)
-      return
-    }
-
     try {
-      const supabase = createClient()
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
+      const res = await fetch('/api/auth/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email, password }),
       })
 
-      if (authError) {
-        setError(
-          authError.message === 'Invalid login credentials'
-            ? 'Correo o contraseña incorrectos'
-            : authError.message
-        )
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error ?? 'Error al iniciar sesión')
         setLoading(false)
         return
       }
-    } catch {
-      setError('Error de conexión con Supabase. Verifica las variables de entorno.')
-      setLoading(false)
-      return
-    }
 
-    router.push('/admin')
-    router.refresh()
+      router.push('/admin')
+      router.refresh()
+    } catch {
+      setError('Error de conexión. Verifica tu internet e intenta de nuevo.')
+      setLoading(false)
+    }
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
-      {/* Background pattern */}
       <div
         className="absolute inset-0 opacity-5"
         style={{
@@ -62,16 +50,14 @@ export default function LoginPage() {
       />
 
       <div className="relative w-full max-w-sm">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-white/10 backdrop-blur rounded-2xl mb-4">
-            <GraduationCap className="w-8 h-8 text-white" />
+            <Stethoscope className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-black text-white">Instituto San Ángel</h1>
+          <h1 className="text-2xl font-black text-white">Liceo de Ciencias de la Salud</h1>
           <p className="text-blue-300 text-sm mt-1">Panel Administrativo</p>
         </div>
 
-        {/* Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           <h2 className="text-xl font-bold text-gray-900 mb-1">Iniciar sesión</h2>
           <p className="text-sm text-gray-500 mb-6">Acceso exclusivo para personal autorizado</p>
@@ -92,7 +78,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="usuario@institutosanangel.edu.mx"
+                placeholder="admin@liceo.edu.mx"
                 required
                 autoComplete="email"
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
@@ -140,7 +126,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-blue-400 text-xs mt-6">
-          © {new Date().getFullYear()} Instituto San Ángel — Acceso restringido
+          © {new Date().getFullYear()} Liceo de Ciencias de la Salud — Acceso restringido
         </p>
       </div>
     </div>
