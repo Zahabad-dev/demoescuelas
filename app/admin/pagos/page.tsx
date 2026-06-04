@@ -1,34 +1,31 @@
 import { query } from '@/lib/db'
 import { CreditCard, CheckCircle, AlertTriangle, Clock } from 'lucide-react'
 import DownloadButton from '../components/DownloadButton'
+import PagosFiltros from './PagosFiltros'
 
 export const dynamic = 'force-dynamic'
 
-type Pago = {
-  id: number
-  alumno_nombre: string
-  carrera: string
-  semestre: number
-  whatsapp: string
-  concepto: string
-  periodo: string
-  monto: number
-  fecha_limite: string
-  fecha_pago: string | null
-  estado: string
-  metodo_pago: string | null
-  notas: string | null
-}
-
 async function getPagos() {
   try {
-    const pagos = await query<Pago>(`
+    const pagos = await query<{
+      id: number; alumno_id: number; alumno_nombre: string; carrera: string
+      semestre: number; whatsapp_alumno: string; correo: string
+      nombre_padre: string; nombre_madre: string; whatsapp_tutor: string
+      concepto: string; periodo: string; monto: number
+      fecha_limite: string; fecha_pago: string | null
+      estado: string; metodo_pago: string | null; notas: string | null
+    }>(`
       SELECT
         p.id,
+        a.id          AS alumno_id,
         a.nombre_completo AS alumno_nombre,
         a.carrera,
         a.semestre,
-        a.numero_whatsapp AS whatsapp,
+        a.numero_whatsapp AS whatsapp_alumno,
+        a.correo,
+        a.nombre_padre,
+        a.nombre_madre,
+        a.whatsapp_tutor,
         p.concepto,
         p.periodo,
         p.monto,
@@ -49,21 +46,14 @@ async function getPagos() {
   }
 }
 
-const estadoColor: Record<string, string> = {
-  pagado:   'bg-green-100 text-green-700',
-  pendiente:'bg-amber-100 text-amber-700',
-  atrasado: 'bg-red-100 text-red-700',
-}
-
 export default async function PagosPage() {
   const { pagos, isDemo } = await getPagos()
 
   const stats = {
-    total:    pagos.length,
-    pagados:  pagos.filter((p) => p.estado === 'pagado').length,
-    atrasados:pagos.filter((p) => p.estado === 'atrasado').length,
-    pendientes:pagos.filter((p) => p.estado === 'pendiente').length,
-    recaudado:pagos.filter((p) => p.estado === 'pagado').reduce((s, p) => s + Number(p.monto), 0),
+    pagados:   pagos.filter(p => p.estado === 'pagado').length,
+    atrasados: pagos.filter(p => p.estado === 'atrasado').length,
+    pendientes:pagos.filter(p => p.estado === 'pendiente').length,
+    recaudado: pagos.filter(p => p.estado === 'pagado').reduce((s, p) => s + Number(p.monto), 0),
   }
 
   return (
@@ -82,6 +72,7 @@ export default async function PagosPage() {
         </div>
       </div>
 
+      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           { label: 'Al corriente', value: stats.pagados,   icon: CheckCircle,   color: 'bg-green-50  text-green-700',  iconBg: 'bg-green-100'  },
@@ -99,53 +90,8 @@ export default async function PagosPage() {
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-          <CreditCard className="w-4 h-4 text-gray-400" />
-          <span className="font-semibold text-gray-700 text-sm">Registro de pagos</span>
-        </div>
-
-        {pagos.length === 0 ? (
-          <div className="px-5 py-12 text-center text-gray-400 text-sm">
-            No hay pagos registrados.<br />
-            <span className="text-xs">Agrega pagos desde pgweb o ejecuta el SQL de admin_usuarios.sql para crear la tabla pagos_liceo.</span>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 text-left">
-                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Alumno</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Carrera</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Periodo</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Monto</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Vence</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Método</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {pagos.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50/70">
-                    <td className="px-5 py-3.5 font-medium text-gray-900">{p.alumno_nombre}</td>
-                    <td className="px-5 py-3.5 text-gray-500 text-xs">{p.carrera}</td>
-                    <td className="px-5 py-3.5 text-gray-500">{p.periodo}</td>
-                    <td className="px-5 py-3.5 font-semibold text-gray-900">${Number(p.monto).toLocaleString('es-MX')}</td>
-                    <td className="px-5 py-3.5 text-gray-500 text-xs">{p.fecha_limite ? new Date(p.fecha_limite).toLocaleDateString('es-MX') : '—'}</td>
-                    <td className="px-5 py-3.5">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${estadoColor[p.estado] ?? 'bg-gray-100 text-gray-600'}`}>
-                        {p.estado}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-gray-500 capitalize">{p.metodo_pago || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <div className="px-5 py-3 border-t border-gray-100 text-xs text-gray-400">{pagos.length} registros</div>
-      </div>
+      {/* Tabla con filtros (client component) */}
+      <PagosFiltros pagos={pagos} />
     </div>
   )
 }
