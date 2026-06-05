@@ -1,6 +1,7 @@
 import { query } from '@/lib/db'
-import { Users, GraduationCap, Phone, Mail } from 'lucide-react'
+import { Users, GraduationCap } from 'lucide-react'
 import DownloadButton from '../components/DownloadButton'
+import AlumnosClient from './AlumnosClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -91,95 +92,7 @@ export default async function AlumnosPage() {
         </div>
       </div>
 
-      {/* Tabla */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-          <Users className="w-4 h-4 text-gray-400" />
-          <span className="font-semibold text-gray-700 text-sm">Lista de alumnos con datos de contacto</span>
-        </div>
-
-        {alumnos.length === 0 ? (
-          <div className="px-5 py-12 text-center text-gray-400 text-sm">
-            No hay alumnos registrados aún.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 text-left">
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Alumno</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Carrera</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sem.</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Adeudo</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">WhatsApp Alumno</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Correo</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Padre / Madre</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">WA Tutor</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {alumnos.map(a => (
-                  <tr key={a.id} className="hover:bg-gray-50/70">
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      <div>{a.nombre_completo}</div>
-                      <div className="text-xs text-gray-400 font-mono">{a.matricula}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${carreraColor[a.carrera] ?? 'bg-gray-100 text-gray-600'}`}>
-                        {a.carrera}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500">{a.semestre}°</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${a.estado_academico === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {a.estado_academico}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {Number(a.adeudo) > 0
-                        ? <span className="text-red-600 font-semibold text-xs">${Number(a.adeudo).toLocaleString('es-MX')}</span>
-                        : <span className="text-green-600 text-xs">Al corriente</span>
-                      }
-                    </td>
-                    <td className="px-4 py-3">
-                      {a.numero_whatsapp
-                        ? <a href={`https://wa.me/${a.numero_whatsapp}`} target="_blank" rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-green-600 hover:underline">
-                            <Phone className="w-3 h-3" />{a.numero_whatsapp}
-                          </a>
-                        : <span className="text-gray-400 text-xs">—</span>
-                      }
-                    </td>
-                    <td className="px-4 py-3">
-                      {a.correo
-                        ? <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                            <Mail className="w-3 h-3" />{a.correo}
-                          </span>
-                        : <span className="text-gray-400 text-xs">—</span>
-                      }
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">
-                      <div>{a.nombre_padre || '—'}</div>
-                      {a.nombre_madre && <div className="text-gray-400">{a.nombre_madre}</div>}
-                    </td>
-                    <td className="px-4 py-3">
-                      {a.whatsapp_tutor
-                        ? <a href={`https://wa.me/${a.whatsapp_tutor}`} target="_blank" rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-green-600 hover:underline">
-                            <Phone className="w-3 h-3" />{a.whatsapp_tutor}
-                          </a>
-                        : <span className="text-gray-400 text-xs">—</span>
-                      }
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <div className="px-5 py-3 border-t border-gray-100 text-xs text-gray-400">{alumnos.length} registros</div>
-      </div>
+      <AlumnosClient initialAlumnos={alumnos} />
     </div>
   )
 }

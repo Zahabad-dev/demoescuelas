@@ -1,6 +1,7 @@
 import { query } from '@/lib/db'
 import { UserSearch, TrendingUp } from 'lucide-react'
 import DownloadButton from '../components/DownloadButton'
+import ProspectosClient from './ProspectosClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -92,54 +93,7 @@ export default async function ProspectosPage() {
           <span className="font-semibold text-gray-700 text-sm">Lista de prospectos</span>
         </div>
 
-        {prospectos.length === 0 ? (
-          <div className="px-5 py-12 text-center text-gray-400 text-sm">
-            No hay prospectos registrados aún.<br />
-            <span className="text-xs">Se registran automáticamente cuando alguien contacta por WhatsApp.</span>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 text-left">
-                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">WhatsApp</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Carrera interés</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Orientador</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Fecha</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {prospectos.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50/70">
-                    <td className="px-5 py-3.5 font-medium text-gray-900">{p.nombre_completo || '—'}</td>
-                    <td className="px-5 py-3.5">
-                      {p.numero_whatsapp ? (
-                        <a href={`https://wa.me/${p.numero_whatsapp}`} target="_blank" rel="noreferrer"
-                          className="text-green-600 hover:underline text-xs font-mono">
-                          {p.numero_whatsapp}
-                        </a>
-                      ) : '—'}
-                    </td>
-                    <td className="px-5 py-3.5 text-gray-500">{p.carrera_interes || '—'}</td>
-                    <td className="px-5 py-3.5">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${estadoColor[p.estado_prospecto] ?? 'bg-gray-100 text-gray-600'}`}>
-                        {p.estado_prospecto}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-gray-500">{p.orientador || '—'}</td>
-                    <td className="px-5 py-3.5 text-gray-400 text-xs">
-                      {p.fecha_contacto ? new Date(p.fecha_contacto).toLocaleDateString('es-MX') : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <div className="px-5 py-3 border-t border-gray-100 text-xs text-gray-400">{prospectos.length} registros</div>
-      </div>
+      <ProspectosClient initialProspectos={prospectos} />
     </div>
   )
 }

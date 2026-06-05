@@ -1,7 +1,7 @@
 import { query } from '@/lib/db'
 import { CreditCard, CheckCircle, AlertTriangle, Clock } from 'lucide-react'
 import DownloadButton from '../components/DownloadButton'
-import PagosFiltros from './PagosFiltros'
+import PagosEditClient from './PagosEditClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -90,8 +90,7 @@ export default async function PagosPage() {
         ))}
       </div>
 
-      {/* Tabla con filtros (client component) */}
-      <PagosFiltros pagos={pagos} />
+      <PagosEditClient pagos={pagos} />
     </div>
   )
 }
