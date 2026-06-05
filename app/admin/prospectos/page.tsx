@@ -19,15 +19,6 @@ type Prospecto = {
   notas: string
 }
 
-const estadoColor: Record<string, string> = {
-  Nuevo:       'bg-blue-100 text-blue-700',
-  Contactado:  'bg-amber-100 text-amber-700',
-  Interesado:  'bg-violet-100 text-violet-700',
-  'En proceso':'bg-orange-100 text-orange-700',
-  Inscrito:    'bg-green-100 text-green-700',
-  Descartado:  'bg-gray-100 text-gray-500',
-}
-
 async function getProspectos() {
   try {
     const prospectos = await query<Prospecto>(`
@@ -51,8 +42,8 @@ export default async function ProspectosPage() {
     byEstado[p.estado_prospecto] = (byEstado[p.estado_prospecto] ?? 0) + 1
   }
 
-  const inscritos  = byEstado['Inscrito']  ?? 0
-  const tasa       = prospectos.length > 0 ? Math.round((inscritos / prospectos.length) * 100) : 0
+  const inscritos = byEstado['Inscrito'] ?? 0
+  const tasa = prospectos.length > 0 ? Math.round((inscritos / prospectos.length) * 100) : 0
 
   return (
     <div>
@@ -67,7 +58,7 @@ export default async function ProspectosPage() {
         <DownloadButton href="/api/reportes/prospectos" label="Descargar Excel" />
       </div>
 
-      {/* Stats por estado */}
+      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <div className="bg-blue-50 text-blue-700 rounded-2xl p-5 border border-blue-100">
           <UserSearch className="w-6 h-6 mb-2 opacity-70" />
@@ -85,13 +76,6 @@ export default async function ProspectosPage() {
           <div className="text-sm font-medium opacity-80">Tasa conversión</div>
         </div>
       </div>
-
-      {/* Tabla */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-          <UserSearch className="w-4 h-4 text-gray-400" />
-          <span className="font-semibold text-gray-700 text-sm">Lista de prospectos</span>
-        </div>
 
       <ProspectosClient initialProspectos={prospectos} />
     </div>
